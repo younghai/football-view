@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>FootballView — 3D Stadium Seat Preview</title>
+    <meta
+      name="description"
+      content="Explore a procedural 3D football stadium, pick from 30,000+ seats and preview the exact view before you buy. Three.js + GSAP demo."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content="FootballView · Hanul Arena" />
+    <meta property="og:description" content="Experience every seat before match day." />
+  </head>
+  <body>
+    <div id="loader">
+      <svg viewBox="0 0 64 40" aria-hidden="true">
+        <ellipse cx="32" cy="22" rx="26" ry="14" fill="none" stroke="currentColor" stroke-width="3" />
+        <ellipse cx="32" cy="22" rx="15" ry="8" fill="none" stroke="currentColor" stroke-width="2" opacity=".6" />
+        <rect x="22" y="18" width="20" height="9" rx="2" fill="currentColor" opacity=".85" />
+      </svg>
+      <div id="loader-text">Levelling the pitch…</div>
+      <div class="l-track"><i id="loader-bar"></i></div>
+    </div>
+
+    <canvas id="c"></canvas>
+    <div id="vig" aria-hidden="true"></div>
+
+    <main id="hud">
+      <div id="leftcol">
+        <section id="match" class="card" aria-label="Upcoming match">
+          <div class="eyebrow" id="m-comp">ARENA INVITATIONAL</div>
+          <div class="teams">
+            <div class="team">
+              <div class="flag" id="flag-home" role="img" aria-label="Home colours"></div>
+              <div class="name" id="m-home">HANRIVER FC</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="team">
+              <div class="flag" id="flag-away" role="img" aria-label="Away colours"></div>
+              <div class="name" id="m-away">NAKDONG UNITED</div>
+            </div>
+          </div>
+          <div class="meta">
+            <div class="row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="5" width="18" height="16" rx="2" />
+                <path d="M8 3v4M16 3v4M3 10h18" />
+              </svg>
+              <span id="m-date">Demo fixture</span> <span class="dot">·</span>
+              <span id="m-kick">7:45 PM</span>
+            </div>
+            <div class="row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z" />
+                <circle cx="12" cy="10" r="2.6" />
+              </svg>
+              <span id="m-venue">Hanul Arena, Seoul</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="camcard" class="card" aria-label="Camera controls">
+          <header>
+            <div class="card-title">Camera</div>
+            <span class="hint-badge">R = reset</span>
+          </header>
+          <div class="cam-body">
+            <canvas id="mm" width="400" height="252" aria-hidden="true"></canvas>
+            <div class="cam-btns">
+              <button class="sq-btn" id="d-zout" aria-label="Zoom out">−</button>
+              <button class="sq-btn" id="d-zin" aria-label="Zoom in">+</button>
+            </div>
+          </div>
+          <footer>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11.2V7a3 3 0 0 1 6 0v4.2M7 11h10l-.8 8.2a2 2 0 0 1-2 1.8H9.8a2 2 0 0 1-2-1.8L7 11Z" />
+            </svg>
+            Drag to orbit <span class="dot">·</span> Scroll to zoom <span class="dot">·</span> Click a seat
+          </footer>
+        </section>
+
+        <section id="filter-panel" class="card" aria-label="Seat search"></section>
+      </div>
+
+      <div id="rightcol">
+        <section id="overview" class="card" aria-label="Stadium overview">
+          <header>
+            <div class="card-title">Stadium Overview</div>
+            <button class="expand" id="ov-expand" aria-label="Reset to full view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+              </svg>
+            </button>
+          </header>
+          <canvas id="ov" width="596" height="300"></canvas>
+        </section>
+
+        <section id="seatcard" class="card" aria-label="Selected seat">
+          <header>
+            <div class="label">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="m12 2 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 16.9l-6.1 3.5 1.5-6.8L2.2 9l6.9-.7L12 2Z" />
+              </svg>
+              <span id="p-label">SELECTED SEAT</span>
+            </div>
+            <button id="fav" aria-label="Save seat to favourites">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M12 20.5s-7.5-4.7-9.3-9.3C1.3 7.6 3.6 4.5 6.9 4.5c2 0 3.6 1.1 4.4 2.7l.7 1.4.7-1.4c.8-1.6 2.4-2.7 4.4-2.7 3.3 0 5.6 3.1 4.2 6.7-1.8 4.6-9.3 9.3-9.3 9.3Z"
+                />
+              </svg>
+            </button>
+          </header>
+          <div id="p-section">Section —</div>
+          <div id="p-sub"><span id="p-tier">—</span><span class="dot">·</span><span id="p-block">Block —</span></div>
+          <div class="seat-grid">
+            <div class="cell"><div class="k">Row</div><div class="v" id="p-row">—</div></div>
+            <div class="cell"><div class="k">Seat</div><div class="v" id="p-seat">—</div></div>
+            <div class="cell">
+              <div class="k">Price</div>
+              <div class="v" id="p-price">— <span class="unit">/seat</span></div>
+            </div>
+          </div>
+          <div class="preview">
+            <img id="p-img" alt="View from the selected seat" />
+            <div class="ph" id="p-ph">Rendering seat view…</div>
+            <div class="pill tl" id="p-score">★ view</div>
+            <div class="pill br">360°</div>
+          </div>
+          <div class="fan-photos" id="fan-photos" aria-label="Views from nearby seats">
+            <img alt="Nearby seat view 1" /><img alt="Nearby seat view 2" />
+          </div>
+          <div class="benefits" id="benefits">
+            <div class="benefit">
+              <svg class="bicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 11V7a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v4" />
+                <path d="M4 13a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3Z" />
+                <path d="M7 18v2M17 18v2" />
+              </svg>
+              <span class="btxt">—</span>
+              <svg class="check" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".22" /><path d="m8.2 12.3 2.6 2.6 5-5.3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
+            </div>
+            <div class="benefit">
+              <svg class="bicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+                <circle cx="12" cy="12" r="2.8" />
+              </svg>
+              <span class="btxt">—</span>
+              <svg class="check" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".22" /><path d="m8.2 12.3 2.6 2.6 5-5.3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
+            </div>
+            <div class="benefit">
+              <svg class="bicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.5a2.5 2.5 0 0 0 0 5V16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.5a2.5 2.5 0 0 0 0-5V8Z" />
+                <path d="M13 6v12" stroke-dasharray="2.4 2.4" />
+              </svg>
+              <span class="btxt">—</span>
+              <svg class="check" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".22" /><path d="m8.2 12.3 2.6 2.6 5-5.3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
+            </div>
+          </div>
+          <button id="checkout">
+            <span id="checkout-label">Grab seat</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path d="M4 12h15M13 6l6 6-6 6" />
+            </svg>
+          </button>
+          <div class="secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="10" width="16" height="10" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            </svg>
+            Concept demo · no real ticket sales
+          </div>
+        </section>
+      </div>
+
+      <div id="dock" role="toolbar" aria-label="View controls">
+        <button class="dock-btn" id="d-reset" aria-label="Reset orbit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+            <path d="M20 4v7h-7" />
+          </svg>
+        </button>
+        <button class="dock-btn active" id="d-3d" aria-pressed="true">3D</button>
+        <button class="dock-btn" id="d-vr" aria-label="Stereo view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-3.6a2 2 0 0 1-1.6-.8l-.6-.8a2 2 0 0 0-3.2 0l-.6.8a2 2 0 0 1-1.6.8H5a2 2 0 0 1-2-2V8Z" />
+            <circle cx="8.2" cy="11" r="1.2" fill="currentColor" />
+            <circle cx="15.8" cy="11" r="1.2" fill="currentColor" />
+          </svg>
+        </button>
+        <div class="dock-sep"></div>
+        <button class="dock-btn tod active" id="tod-night" aria-pressed="true" title="Night">☾</button>
+        <button class="dock-btn tod" id="tod-dusk" aria-pressed="false" title="Dusk">🌇</button>
+        <button class="dock-btn tod" id="tod-day" aria-pressed="false" title="Day">☀</button>
+        <div class="dock-sep"></div>
+      </div>
+
+      <div id="sb-hint">Drag to look around · scroll to zoom · Esc to leave</div>
+      <div id="backbar" role="toolbar" aria-label="Seat view controls">
+        <button id="bk-exit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+          Back to stadium
+        </button>
+        <button id="bk-snd" aria-label="Toggle stadium sound">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 9v6h4l5 4V5L8 9H4Z" />
+            <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <div id="checkout-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cm-title">
+      <div class="cm-backdrop" id="cm-backdrop"></div>
+      <div class="cm-card">
+        <header>
+          <div>
+            <div class="cm-eyebrow">Secure checkout</div>
+            <h2 id="cm-title">Complete your booking</h2>
+          </div>
+          <button class="cm-close" id="cm-close" aria-label="Close checkout">✕</button>
+        </header>
+        <div class="cm-body">
+          <section class="cm-summary">
+            <div class="cm-comp" id="cm-comp"></div>
+            <div class="cm-teams" id="cm-teams"></div>
+            <div class="cm-meta" id="cm-meta"></div>
+            <div class="cm-seatbox">
+              <div class="cm-k">Your seat</div>
+              <div class="cm-seatline"><span id="cm-seat-section"></span><span id="cm-seat-tier"></span></div>
+              <div class="cm-seatgrid">
+                <div><em>Row</em><b id="cm-seat-row"></b></div>
+                <div><em>Seat</em><b id="cm-seat-no"></b></div>
+                <div><em>View</em><b id="cm-seat-score"></b></div>
+              </div>
+            </div>
+            <div class="cm-prices">
+              <div><span>Seat price</span><span id="cm-price"></span></div>
+              <div><span>Booking fee</span><span>€6.90 (≈ $7.52)</span></div>
+              <div class="total"><span>Total</span><span id="cm-total"></span></div>
+            </div>
+          </section>
+          <section class="cm-form" id="cm-form">
+            <label>Name on ticket<input id="cm-name" autocomplete="name" placeholder="Jane Doe" /></label>
+            <label>Email for delivery<input id="cm-email" type="email" placeholder="jane@example.com" /></label>
+            <label>Card number<input id="cm-card" inputmode="numeric" placeholder="4242 4242 4242 4242" maxlength="19" /></label>
+            <div class="cm-row2">
+              <label>Expiry<input id="cm-exp" placeholder="12/28" maxlength="5" /></label>
+              <label>CVC<input id="cm-cvc" inputmode="numeric" placeholder="123" maxlength="4" /></label>
+            </div>
+            <p class="cm-note">Concept demo — no real payment is processed. Any values work.</p>
+            <button id="cm-pay">Pay</button>
+          </section>
+          <section class="cm-success" id="cm-success" hidden>
+            <canvas id="cm-qr" width="132" height="132" aria-label="Ticket code"></canvas>
+            <h3>You're going! 🎉</h3>
+            <p id="cm-success-line"></p>
+            <button id="cm-done">Done</button>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="tip" aria-hidden="true">
+      <div class="t1" id="tip1">Section · Row · Seat</div>
+      <div class="t2" id="tip2">€ pending</div>
+    </div>
+    <div id="toast" role="status"></div>
+    <div id="a11y-live" class="sr-only" aria-live="polite"></div>
+    <div id="webgl-fallback" hidden>
+      <h2>3D view unavailable</h2>
+      <p>Your browser could not start WebGL. Please try a recent Chrome, Edge, Firefox or Safari with hardware acceleration enabled.</p>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

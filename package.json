@@ -1,0 +1,26 @@
+{
+  "name": "football-view",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "gsap": "^3.12.5",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.6"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}
