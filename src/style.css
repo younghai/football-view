@@ -712,12 +712,54 @@ body.seat-mode #overview {
     width: 264px;
   }
 }
+
+/* mobile: seat search becomes a dock-toggled bottom sheet
+   (it used to be display:none entirely — the feature vanished on tablets) */
+#d-search {
+  display: none;
+}
 @media (max-width: 940px) {
   #overview {
     display: none;
   }
+  #d-search {
+    display: grid;
+  }
   #filter-panel {
     display: none;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 74px;
+    top: auto;
+    width: auto;
+    z-index: 30;
+    max-height: 62vh;
+    overflow: auto;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  }
+  #filter-panel.sheet-open {
+    display: block;
+    animation: sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.25, 1.1);
+  }
+  #filter-panel::before {
+    content: '';
+    display: block;
+    width: 44px;
+    height: 4px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.25);
+    margin: 0 auto 10px;
+  }
+  #filter-panel[hidden] {
+    display: none !important;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
   }
 }
 @media (max-width: 760px) {

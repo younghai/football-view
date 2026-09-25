@@ -355,8 +355,13 @@ export function buildBowl(parent) {
           goal = true;
         }
       }
-      sbState.clock = `${String(sbState.minute).padStart(2, '0')}:${String(sbState.second).padStart(2, '0')}`;
-      drawScoreboard(sbState);
+      const clock = `${String(sbState.minute).padStart(2, '0')}:${String(sbState.second).padStart(2, '0')}`;
+      // redraw the 512×176 canvas + texture upload only when the displayed
+      // second changes (~3×/s) instead of every rendered frame (~60×/s)
+      if (clock !== sbState.clock) {
+        sbState.clock = clock;
+        drawScoreboard(sbState);
+      }
       return goal;
     },
   };

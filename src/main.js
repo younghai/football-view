@@ -108,6 +108,7 @@ const picker = createPicker({
 
 function selectSeat(seat, mesh) {
   picker.clearHover();
+  closeSheet(); // get the mobile search sheet out of the view
   track('seat_preview', { section: seat.section, row: seat.row, seat: seat.seat, price: seat.price });
   const prev = ui.selected;
   if (prev && prev !== seat && !prev.confirmed) {
@@ -200,6 +201,18 @@ const todButtons = {
   dusk: document.getElementById('tod-dusk'),
   day: document.getElementById('tod-day'),
 };
+
+/* ---------- mobile search sheet ---------- */
+const filterPanel = document.getElementById('filter-panel');
+const searchToggle = document.getElementById('d-search');
+function closeSheet() {
+  filterPanel.classList.remove('sheet-open');
+  searchToggle.setAttribute('aria-expanded', 'false');
+}
+searchToggle.addEventListener('click', () => {
+  const open = filterPanel.classList.toggle('sheet-open');
+  searchToggle.setAttribute('aria-expanded', String(open));
+});
 for (const [name, btn] of Object.entries(todButtons)) {
   btn.addEventListener('click', () => {
     sceneKit.setTimeOfDay(name);
@@ -229,6 +242,7 @@ window.addEventListener('keydown', (ev) => {
 function suggestSeat() {
   const rnd = mulberry32(Date.now() & 0xffff);
   const open = seatApi.seats.filter((s) => !s.taken && !s.confirmed);
+  if (!open.length) return; // fully-sold bowl edge case
   const seat = open[Math.floor(rnd() * open.length)];
   seatApi.setColor(seatApi.meshOf(seat), seat.id, seatApi.seatColor);
   ui.showSeat(seat, 'selected');

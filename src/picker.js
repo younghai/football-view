@@ -22,6 +22,25 @@ export function createPicker({ renderer, camera, seatApi, ui, onPick }) {
     return null;
   }
 
+  // Touch taps can't hit a ~2px seat reliably: retry a small cross of offsets
+  // around the tap point so a fat-finger press still lands on a seat.
+  function pickTolerant(ev) {
+    const direct = pick(ev);
+    if (direct || ev.pointerType !== 'touch') return direct;
+    const r = renderer.domElement.getBoundingClientRect();
+    for (const [dx, dy] of [[16, 0], [-16, 0], [0, 16], [0, -16], [12, 12], [-12, -12], [12, -12], [-12, 12]]) {
+      ndc.x = ((ev.clientX + dx - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -((ev.clientY + dy - rect.top) / rect.height) * 2 + 1;
+      ray.setFromCamera(ndc, camera);
+      const hits = ray.intersectObjects(seatApi.meshes, false);
+      for (const h of hits) {
+        const seat = h.object.userData.byId[h.instanceId];
+        if (seat) return { seat, mesh: h.object, instanceId: h.instanceId };
+      }
+    }
+    return null;
+  }
+
   function clearHover() {
     if (hovered) {
       const { seat, mesh } = hovered;
@@ -83,7 +102,7 @@ export function createPicker({ renderer, camera, seatApi, ui, onPick }) {
     const moved = Math.hypot(ev.clientX - downXY[0], ev.clientY - downXY[1]);
     downXY = null;
     if (moved > 6) return; // was a drag, not a click
-    const hit = pick(ev);
+    const hit = pickTolerant(ev);
     if (!hit) return;
     onPick(hit.seat, hit.mesh);
   });

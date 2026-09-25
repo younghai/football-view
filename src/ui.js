@@ -226,6 +226,8 @@ export function createUI({ renderer, scene, camera, reduced }) {
     finder(0, cell * (n - 5));
   }
 
+  let lastFocused = null;
+
   function openCheckout(seat) {
     if (!seat || seat === confirmedSeat) return;
     modalSeat = seat;
@@ -244,14 +246,36 @@ export function createUI({ renderer, scene, camera, reduced }) {
     $('cm-pay').textContent = `Pay €${totalEur.toFixed(2)} / $${usd2(totalEur)} — grab this seat`;
     $('cm-form').hidden = false;
     $('cm-success').hidden = true;
+    lastFocused = document.activeElement;
     modal.hidden = false;
+    document.body.style.overflow = 'hidden';
     $('cm-name').focus();
   }
 
   function closeCheckout() {
     modal.hidden = true;
+    document.body.style.overflow = '';
     modalSeat = null;
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
   }
+
+  // keep Tab (and Shift+Tab) cycling inside the dialog while it is open
+  modal.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Tab') return;
+    const focusables = modal.querySelectorAll(
+      'button:not([disabled]), input, [href], [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (ev.shiftKey && document.activeElement === first) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && document.activeElement === last) {
+      ev.preventDefault();
+      first.focus();
+    }
+  });
 
   function finishPurchase() {
     const seat = modalSeat;
